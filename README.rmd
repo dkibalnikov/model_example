@@ -1,0 +1,54 @@
+---
+output: rmarkdown::github_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Model examples
+Some random set of model examples from different areas   
+`prediction_form_30092020.R` script includes two models:
+
+1. Forecast of reaching purpose level for production output 
+2. Infectious and Recovered quantity forecast during pandemic
+
+### Примеры моделей
+Просто случайный набор моделей из разных областей   
+Скрипт `prediction_form_30092020.R` включает в себя две модели:
+
+1. Прогноз выхода объёмов производства на целевой уровень 
+2. Прогноз количества заражений и смертности при эпидемиях 
+
+
+Тизер:  
+```{r COVID-19 Russia, echo = FALSE, message = FALSE, warning  = FALSE, fig.width = 9, fig.height = 7}
+
+library(tidyverse)
+library(COVID19) #пакет для выгрузки данных о COVID19
+
+tableau <- palette.colors(palette = "Tableau")
+covid_ru <- covid19("russia", verbose = FALSE) #загружаем данные из облака
+# Guidotti, E., Ardia, D., (2020), "COVID-19 Data Hub", Journal of Open Source Software 5(51):2376, doi:
+# 10.21105/joss.02376.
+
+covid_ru1 <- covid_ru %>% 
+  mutate(across(c(tests, confirmed, recovered, deaths), ~(. - lag(.)), .names = "{col}_day"),
+         rcvrd_dead_day = recovered_day + deaths_day) #создаем мгновенные значения (на момент времени) из накопительных 
+  #slice(1:(nrow(covid_ru)-1)) #
+
+covid_ru2 <- covid_ru1 %>% 
+  filter(date > as.Date("2020-04-01")) 
+
+rename_indicators = c(confirmed_day = "Инфицированных", deaths_day = "Смертей", recovered_day = "Выздоровлений", tests_day = "Тестирований", rcvrd_dead_day = "Выздоровлений\nсмертей")
+
+covid_ru2 %>% 
+  pivot_longer(matches("_day"), names_to = "type")  %>% 
+  ggplot() +
+  geom_line(aes(x = date, y = value, group = type, col = type), size = 2) +
+  facet_grid(rows = vars(type), scale = "free", labeller = labeller(type = rename_indicators)) +
+  scale_color_manual(values = unname(tableau), labels = rename_indicators) + 
+  labs(title = "Динамика показтелий пандемии COVID-19 в России", x = "День", y = "Число наблюдений", col = "")
+  
+```
+
