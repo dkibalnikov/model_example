@@ -1,7 +1,8 @@
 
 ### Model examples
 
-Some random set of model examples from different areas  
+A random set of model examples baset on system dynamics principals for
+different areas  
 `prediction_form_30092020.R` script includes two models:
 
 1.  Forecast of reaching purpose level for production output
@@ -9,7 +10,8 @@ Some random set of model examples from different areas
 
 ### Примеры моделей
 
-Просто случайный набор моделей из разных областей  
+Примеры моделей, построенных на базе принципов системной динамики в
+различных областях  
 Скрипт `prediction_form_30092020.R` включает в себя две модели:
 
 1.  Прогноз выхода объёмов производства на целевой уровень

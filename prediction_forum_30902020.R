@@ -6,13 +6,13 @@ library(patchwork) #библиотека группировки графиков
 
 #   ____________________________________________________________________________
 #   1. Подготовительная часть                                               ####
-tableau <- palette.colors(palette = "Tableau")
+tableau <- palette.colors(palette = "Tableau") #подгодовка цветовой палитры
 
 #   ____________________________________________________________________________
 #   2. Прогноз выхода объёмов производства на целевой уровень               ####
 # Оригинальная модель построена на базе данных реального производства. 
 # Реальные данные защищены соглашением о конфиденциальности.
-# Поэтом модель демонстрируется на синтезированных данных, близких к реальным
+# Поэтом модель демонстрируется на синтезированных данных, близких к реальным.
 
 ##  ............................................................................
 ##  2.1 Генерируем данные для модели                                        ####
@@ -158,7 +158,6 @@ sim_plant_mdls %>%
   geom_histogram(binwidth = 5, alpha = .8) + 
   geom_density(aes(y = after_stat(count*5)), fill = tableau[3], col = tableau[3], alpha = .5) +
   facet_grid(~n) +
-  guides(fill = "colorbar", fill = "legend") +
   labs(title = "Гистограммы оценки доверительных интервалов для двух примеров с разными размерами интервалов (25 и 50 дней)",
        x = "Оценка параметра", y = "Количество наблюдений")
 
@@ -176,9 +175,11 @@ boot_aug %>%
   labs(title = "Сопоставление фактических данных и множественных bootstrap оценок для двух примеров с разными размерами интервалов (25 и 50 дней)",
        x = "Дни", y = "Объем выпуска")
 
-
 #   ____________________________________________________________________________
 #   3. Прогноз количества заражений и смертности при эпидемиях              ####
+# SIR модель строится на базе "подгонки" параметров функций фактическим значениям, полученным из официальной статистики.
+# Функция, параметры которой подгоняются, задается не явно, а виде набора дифференциальных уравнений.
+# Вместо аналитического решения системы дифференциальных уравнений в каждом отдельном случае значения нахоятся численным методом.
 
 covid_ru <- covid19("russia") #загружаем данные из облака
 # Guidotti, E., Ardia, D., (2020), "COVID-19 Data Hub", Journal of Open Source Software 5(51):2376, doi:
@@ -189,7 +190,7 @@ covid_ru <- covid19("russia") #загружаем данные из облака
 covid_ru1 <- covid_ru %>% 
   mutate(across(c(tests, confirmed, recovered, deaths), ~(. - lag(.)), .names = "{col}_day"),
          rcvrd_dead_day = recovered_day + deaths_day) #создаем мгновенные значения (на момент времени) из накопительных 
-  #slice(1:(nrow(covid_ru)-1)) #
+  #slice(1:(nrow(covid_ru)-1)) 
 
 covid_ru2 <- covid_ru1 %>% 
   filter(date > as.Date("2020-04-01")) 
@@ -199,7 +200,8 @@ rename_indicators = c(confirmed_day = "Инфицированных", deaths_day
 covid_ru2 %>% 
   pivot_longer(matches("_day"), names_to = "type")  %>% 
   ggplot() +
-  geom_line(aes(x = date, y = value, group = type, col = type), size = 2) +
+  geom_line(aes(x = date, y = value, group = type, col = type), size = 2, alpha = 0.6) + 
+  geom_smooth(aes(x = date, y = value, group = type, col = type), size = 1, linetype = 5) +
   facet_grid(rows = vars(type), scale = "free", labeller = labeller(type = rename_indicators)) +
   scale_color_manual(values = unname(tableau), labels = rename_indicators) + 
   labs(title = "Динамика показтелий пандемии COVID-19 в России", x = "День", y = "Число наблюдений", col = "")
@@ -242,10 +244,11 @@ Opt$message
 Opt_par <- setNames(Opt$par, c("beta", "gamma"))
 Opt_par
 # beta        gamma 
-# 1.923651e+03 5.822402e-03 
+# 1.921733e+03 5.638684e-03
+# параметры выше получены 28.09.2020
+# при вызове модели в другой день параметры будут пересчитаны с новыми значениями
 
 t <- 1:300 # устанавливаем интервал прогнозного периода в днях
-
 
 ##  ............................................................................
 ##  3.3 Анализируем результат                                               ####
@@ -277,8 +280,8 @@ p1 <- covid_ru3 %>%
 p2 <- covid_ru3 %>% 
   ggplot() +
   geom_line(aes(x = time, y = R, col = "Прогноз"), alpha =.7, linetype = 5, size = 2) +
-  geom_line(aes(x = time, y = rcvrd_dead, col = "Факт"), alpha =.3, size = 2) + 
-  geom_smooth(aes(x = time, y = rcvrd_dead, col = "Сглаженный\nфакт"), formula = y ~ splines::bs(x, 2), method = 'loess', linetype = 5) +
+  geom_line(aes(x = time, y = rcvrd_dead_day, col = "Факт"), alpha =.3, size = 2) + 
+  geom_smooth(aes(x = time, y = rcvrd_dead_day, col = "Сглаженный\nфакт"), formula = y ~ splines::bs(x, 2), method = 'loess', linetype = 5) +
   scale_color_manual(values = c("Прогноз" = unname(tableau[1]), "Факт" = unname(tableau[2]), "Сглаженный\nфакт"  = unname(tableau[2])), 
                      labels = c("Прогноз", "Факт", "Сглаженный\nфакт"), 
                      breaks = c("Прогноз", "Факт", "Сглаженный\nфакт")) +
